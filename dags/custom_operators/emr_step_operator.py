@@ -23,7 +23,7 @@ class EmrClusterException(Exception):
 class EmrStepOperator(BaseOperator):
     template_fields = ('cluster_name', 'driver_path', 'step_name', 'configuration_path', 'env_variables', 'mode', 'spark_config')
     # ui_color = '#A6E6A6'
-
+    spark_config=None
     @apply_defaults
     def __init__(self, cluster_name, driver_path, step_name, configuration_path,
                  env_variables, mode, spark_config=None, *args, **kwargs):
