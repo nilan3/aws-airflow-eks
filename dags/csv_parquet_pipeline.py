@@ -114,7 +114,7 @@ pc_etlclausepattern_task = EmrStepOperator(
 )
 
 pcx_mottransaction_task = EmrStepOperator(
-    task_id="pc_account_task",
+    task_id="pcx_mottransaction_task",
     executor_config={"KubernetesExecutor": {
         "image": "nilan3/airflow-k8s:test-local-3"
     }},
@@ -130,7 +130,7 @@ pcx_mottransaction_task = EmrStepOperator(
 )
 
 pcx_motcost_task = EmrStepOperator(
-    task_id="pc_account_task",
+    task_id="pcx_motcost_task",
     executor_config={"KubernetesExecutor": {
         "image": "nilan3/airflow-k8s:test-local-3"
     }},
@@ -160,7 +160,7 @@ pc_etlclausepattern_sensor_task = DynamoSensorOperator(
 )
 
 pcx_mottransaction_sensor_task = DynamoSensorOperator(
-    task_id="pc_account_sensor_task",
+    task_id="pcx_mottransaction_sensor_task",
     executor_config={"KubernetesExecutor": {
         "image": "nilan3/airflow-k8s:test-local-3"
     }},
@@ -174,7 +174,7 @@ pcx_mottransaction_sensor_task = DynamoSensorOperator(
 )
 
 pcx_motcost_sensor_task = DynamoSensorOperator(
-    task_id="pc_account_sensor_task",
+    task_id="pcx_motcost_sensor_task",
     executor_config={"KubernetesExecutor": {
         "image": "nilan3/airflow-k8s:test-local-3"
     }},
