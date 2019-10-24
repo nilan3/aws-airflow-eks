@@ -80,15 +80,15 @@ def dynamodb_sensor_processor(items, boto3_client):
     steps = emr_conn.list_steps(ClusterId=cluster_id)["Steps"]
     for step in steps:
         if step["Name"] == item["job_name"]["S"]:
-            if step["Status"]["State"] not in ['CANCELLED', 'FAILED', 'INTERRUPTED']:
-                return True
-            else:
+            if step["Status"]["State"] in ['CANCELLED', 'FAILED', 'INTERRUPTED']:
                 # TODO: Fetch Error
                 item.update({"status": {'S': 'failed'}})
                 ddb_conn.put_item(
                     TableName="policycentre_pipeline_control",
                     Item=item)
                 raise Exception("EMR Step {} has failed".format(item["job_name"]["S"]))
+            else:
+                return True
     return False
 
 
