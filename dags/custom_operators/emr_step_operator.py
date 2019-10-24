@@ -105,5 +105,5 @@ class EmrStepOperator(BaseOperator):
                         for k in self.env_variables])
         if self.mode == "python":
             self.submit_python_job(emr_conn, step_action_name, env)
-        elif self.mode == "pyspark":
-            self.submit_spark_job()
+        # elif self.mode == "pyspark":
+        #     self.submit_spark_job()
