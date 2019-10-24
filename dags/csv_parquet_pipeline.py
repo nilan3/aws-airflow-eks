@@ -120,7 +120,7 @@ pcx_mottransaction_task = EmrStepOperator(
     }},
     cluster_name="DataPipeline-EMR-sandbox",
     driver_path="s3://dlg-artefacts-bucket-sandbox-eu-west-1/emr/drivers/csv_to_parquet.py",
-    step_name="csv2parquet_pc_account",
+    step_name="csv2parquet_pcx_mottransaction",
     configuration_path="s3://dlg-artefacts-bucket-sandbox-eu-west-1/emr/configurations/emr-csv-to-parquet.yml",
     env_variables={
         "PY_FILES": "s3://dlg-artefacts-bucket-sandbox-eu-west-1/emr/py-files/dlg-etl-quotes.zip",
@@ -136,7 +136,7 @@ pcx_motcost_task = EmrStepOperator(
     }},
     cluster_name="DataPipeline-EMR-sandbox",
     driver_path="s3://dlg-artefacts-bucket-sandbox-eu-west-1/emr/drivers/csv_to_parquet.py",
-    step_name="csv2parquet_pc_account",
+    step_name="csv2parquet_pcx_motcost",
     configuration_path="s3://dlg-artefacts-bucket-sandbox-eu-west-1/emr/configurations/emr-csv-to-parquet.yml",
     env_variables={
         "PY_FILES": "s3://dlg-artefacts-bucket-sandbox-eu-west-1/emr/py-files/dlg-etl-quotes.zip",
