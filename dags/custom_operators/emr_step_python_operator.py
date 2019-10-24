@@ -21,24 +21,28 @@ class EmrClusterException(Exception):
 
 
 class EmrStepPythonOperator(BaseOperator):
-    template_fields = ('cluster_name', 'driver_path', 'configuration_path', 'env_variables')
+    template_fields = ('cluster_name', 'driver_path', 'step_name', 'configuration_path', 'env_variables', 'mode')
     # ui_color = '#A6E6A6'
 
     @apply_defaults
-    def __init__(self, cluster_name, driver_path, configuration_path,
-                 env_variables, *args, **kwargs):
+    def __init__(self, cluster_name, driver_path, step_name, configuration_path,
+                 env_variables, mode, *args, **kwargs):
         """
         Operator which takes care of deploying a 'step' onto an existing EMR cluster.
         :param cluster_name: str
         :param driver_path: str - s3 full path for the driver script
+        :param step_name: str - emr step name prefix
         :param configuration_path: str - s3 full path for the job config file
         :param env_variables: dict - environment variable and values
+        :param mode: str [python|pyspark]
         """
         super(EmrStepPythonOperator, self).__init__(*args, **kwargs)
         self.cluster_name = cluster_name
         self.driver_path = driver_path
+        self.step_name = step_name
         self.configuration_path = configuration_path
         self.env_variables = env_variables
+        self.mode = mode
 
     def check_long_cluster_running(self, emr_connection):
         """
@@ -61,17 +65,7 @@ class EmrStepPythonOperator(BaseOperator):
                                       .format(self.cluster_name))
         return cluster_id
 
-    def execute(self, context):
-        """
-        Method to be run when operator is executed.
-        :param context: dict
-        """
-        config = Config(connect_timeout=5, retries={'max_attempts': 2})
-        emr_conn = boto3.client('emr', config=config, region_name='eu-west-1')
-        # TODO: Change to using manually specified step name instead of driver filename
-        step_action_name = os.path.basename(self.driver_path).replace(".py", "") + "-" + time \
-            .strftime("%Y%m%d-%H:%M:%S")
-        self.env_variables.update({"STEP_NAME": step_action_name})
+    def submit_python_job(self, emr_conn, step_action_name):
         env = " ".join(["{}={}".format(k, self.env_variables[k])
                         for k in self.env_variables])
         sh_script = f"aws s3 cp {self.driver_path} /tmp/ && {env} python3 " \
@@ -86,3 +80,21 @@ class EmrStepPythonOperator(BaseOperator):
                 }
         action = emr_conn.add_job_flow_steps(JobFlowId=cluster_id, Steps=[step])
         LOGGER.info("Added step: %s", action)
+
+    def submit_spark_job(self):
+        LOGGER.info("Added step")
+
+    def execute(self, context):
+        """
+        Method to be run when operator is executed.
+        :param context: dict
+        """
+        config = Config(connect_timeout=5, retries={'max_attempts': 2})
+        emr_conn = boto3.client('emr', config=config, region_name='eu-west-1')
+        # TODO: Change to using manually specified step name instead of driver filename
+        step_action_name = self.step_name + "-" + time.strftime("%Y%m%d-%H:%M:%S")
+        self.env_variables.update({"STEP_NAME": step_action_name})
+        if self.mode == "python":
+            self.submit_python_job(emr_conn, step_action_name)
+        elif self.mode == "pyspark":
+            self.submit_spark_job()

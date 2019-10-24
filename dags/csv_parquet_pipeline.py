@@ -104,11 +104,13 @@ pc_etlclausepattern_task = EmrStepPythonOperator(
     }},
     cluster_name="DataPipeline-EMR-sandbox",
     driver_path="s3://dlg-artefacts-bucket-sandbox-eu-west-1/emr/drivers/csv_to_parquet.py",
+    step_name="csv2parquet_pc_etlclausepattern",
     configuration_path="s3://dlg-artefacts-bucket-sandbox-eu-west-1/emr/configurations/emr-csv-to-parquet.yml",
     env_variables={
         "PY_FILES": "s3://dlg-artefacts-bucket-sandbox-eu-west-1/emr/py-files/dlg-etl-quotes.zip",
         "SRC_S3_PREFIX": "PCUSER/PC_ETLCLAUSEPATTERN"
-    }
+    },
+    mode="python"
 )
 
 pc_account_task = EmrStepPythonOperator(
@@ -118,11 +120,13 @@ pc_account_task = EmrStepPythonOperator(
     }},
     cluster_name="DataPipeline-EMR-sandbox",
     driver_path="s3://dlg-artefacts-bucket-sandbox-eu-west-1/emr/drivers/csv_to_parquet.py",
+    step_name="csv2parquet_pc_account",
     configuration_path="s3://dlg-artefacts-bucket-sandbox-eu-west-1/emr/configurations/emr-csv-to-parquet.yml",
     env_variables={
         "PY_FILES": "s3://dlg-artefacts-bucket-sandbox-eu-west-1/emr/py-files/dlg-etl-quotes.zip",
         "SRC_S3_PREFIX": "PCUSER/PC_ACCOUNT"
-    }
+    },
+    mode="python"
 )
 
 pc_etlclausepattern_sensor_task = DynamoSensorOperator(
