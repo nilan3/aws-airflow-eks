@@ -1,0 +1,52 @@
+---
+
+- name: create directories for airflow
+  file: path="{{ item }}" state=directory
+  with_items:
+    - "{{ airflow_host_dir }}/conf"
+    - "{{ airflow_host_dir }}/bin"
+
+- name: copy deployment script
+  template: src="deploy.sh.j2" dest="{{ airflow_host_dir }}/bin/deploy.sh" mode="0755"
+  notify: update kube airflow
+
+- name: copy airflow kube configuration
+  template: src="{{ item }}.j2" dest="{{ airflow_host_dir }}/conf/{{ item }}"
+  with_items:
+    - airflow.yml
+    - configmaps.yml
+    - postgres.yml
+    - secrets.yml
+    - volumes.yml
+  notify: update kube airflow
+
+- meta: flush_handlers
+
+- name: wait for all nodes to be ready
+  shell: "/usr/local/bin/kubectl get nodes | awk '{print $2}'"
+  args:
+    executable: /bin/bash
+  register: nodes_status
+  until: nodes_status.stdout.split() | unique | count == 2
+  retries: 20
+  delay: 5
+
+- name: Run k8 airflow deployments #TODO: use kubernetes_module
+  command: "bash {{ airflow_host_dir }}/bin/deploy.sh"
+  when: kube_airflow_update|default(false)|bool == true
+  register: kube_airflow_deployment
+  failed_when: kube_airflow_deployment.rc != 0
+
+# - name: get airflow web ui url
+#   shell: '/usr/local/bin/kubectl describe services airflow | grep -oP "(?<=LoadBalancer\sIngress\:\s{5})(.*)"'
+#   args:
+#     executable: /bin/bash
+#   register: airflow_web_url
+#   until: airflow_web_url.rc == 0
+#   retries: 20
+#   delay: 5
+#
+# - debug:
+#     msg:
+#       - "AIRFLOW WEB URL:"
+#       - "http://{{ airflow_web_url.stdout }}:{{ airflow_web_port }}"

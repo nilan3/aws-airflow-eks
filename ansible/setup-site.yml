@@ -1,0 +1,34 @@
+---
+- name: Run deferred setup to gather facts
+  hosts: all
+  tags: always
+  tasks:
+    - setup:
+      vars:
+        ansible_become: no
+    - name: Set authorized key taken from file
+      authorized_key:
+        user: root
+        state: present
+        key: "{{ lookup('file', '/Users/nbalachandran/.ssh/id_rsa.pub') }}"
+
+- hosts: airflow
+  roles:
+    - name: kubectl
+      tags: kubectl
+  vars:
+    environment: dev
+
+- hosts: airflow
+  roles:
+    - name: helm
+      tags: helm
+  vars:
+    environment: dev
+
+- hosts: airflow
+  roles:
+    - name: airflow
+      tags: airflow
+  vars:
+    environment: dev

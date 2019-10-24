@@ -1,0 +1,131 @@
+AWSTemplateFormatVersion: 2010-09-09
+Description: Set up cloudformation requirements
+
+Parameters:
+  ApplicationName:
+    Type: String
+    Default: cloudFormation
+  Version:
+    Type: String
+    Default: "0.0.1"
+    Description: Version of the application
+  Environment:
+    Type: String
+    Default: dev
+    Description: Select the appropriate environment
+    AllowedValues:
+      - dev
+      - staging
+      - prod
+  S3CfnBucketName:
+    Type: String
+    Default: aws-cloudformation-templates
+  Ec2KeyName:
+    Type: String
+  NodeImageId:
+    Type: String
+
+Resources:
+  TemplatesBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: !Sub "${S3CfnBucketName}-${Environment}-${AWS::Region}"
+      VersioningConfiguration:
+        Status: Enabled
+      AccessControl: Private
+      Tags:
+        - Key: Name
+          Value: !Sub "${S3CfnBucketName}-${Environment}-${AWS::Region}"
+        - Key: Version
+          Value: !Ref Version
+        - Key: Environment
+          Value: !Ref Environment
+        - Key: Application
+          Value: !Ref ApplicationName
+
+  CloudFormationServiceRole:
+    Type: "AWS::IAM::Role"
+    Properties:
+      RoleName: AWSCloudFormationServiceRole
+      AssumeRolePolicyDocument:
+        Statement:
+          -
+            Effect: "Allow"
+            Principal:
+              Service:
+                - "cloudformation.amazonaws.com"
+                - "ec2.amazonaws.com"
+            Action:
+              - "sts:AssumeRole"
+          -
+            Effect: "Allow"
+            Principal:
+              AWS:
+                - !Sub "arn:aws:iam::${AWS::AccountId}:root"
+            Action:
+              - "sts:AssumeRole"
+      Path: "/"
+      Policies:
+        -
+          PolicyName: "AmazonCloudFormationServiceRolePolicy"
+          PolicyDocument:
+            Statement:
+              -
+                Effect: "Allow"
+                Action: "*"
+                Resource: "*"
+
+  EC2Instance:
+    Type: AWS::EC2::Instance
+    Properties:
+      InstanceType: t2.small
+      IamInstanceProfile: !Ref InstanceProfile
+      SecurityGroups:
+      - Ref: InstanceSecurityGroup
+      KeyName: !Ref Ec2KeyName
+      ImageId: !Ref NodeImageId
+
+  InstanceProfile:
+    Type: AWS::IAM::InstanceProfile
+    Properties:
+      Path: "/"
+      Roles:
+        - !Ref CloudFormationServiceRole
+
+  InstanceSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: Enable SSH access via port 22
+      SecurityGroupIngress:
+      - IpProtocol: tcp
+        FromPort: '22'
+        ToPort: '22'
+        CidrIp: 0.0.0.0/0
+
+Outputs:
+  TemplatesBucketName:
+    Value: !Ref TemplatesBucket
+    Export:
+      Name: !Sub "${AWS::StackName}-TemplatesBucketName"
+
+  TemplatesBucketArn:
+    Value: !GetAtt TemplatesBucket.Arn
+    Description: ARN of the templates bucket
+    Export:
+      Name: !Sub "${AWS::StackName}-TemplatesBucketArn"
+
+  CloudFormationServiceRole:
+    Description: "Policy to Allow Cloudformation Full Access AWS to Resources"
+    Value: !Ref "CloudFormationServiceRole"
+    Export:
+      Name: !Sub "${AWS::StackName}-CloudFormationServiceRole"
+
+  Ec2BastionPublicIp:
+    Value: !GetAtt EC2Instance.PublicIp
+    Export:
+      Name: !Sub "${AWS::StackName}-Ec2BastionPublicIp"
+
+  Ec2BastionPrivateIp:
+    Value: !GetAtt EC2Instance.PrivateIp
+    Export:
+      Name: !Sub "${AWS::StackName}-Ec2BastionPrivateIp"

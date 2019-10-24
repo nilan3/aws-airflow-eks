@@ -1,0 +1,5 @@
+---
+airflow_host_dir: /srv/services/airflow
+helm_host_dir: /srv/services/helm
+kubectl_host_dir: /srv/services/kube
+

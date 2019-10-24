@@ -1,0 +1,3 @@
+---
+- name: update kube airflow
+  set_fact: kube_airflow_update=true

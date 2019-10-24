@@ -1,0 +1,87 @@
+AWSTemplateFormatVersion: 2010-09-09
+Description: Create EFS File System for Kubernetes Cluster
+Parameters:
+  EKSClusterStackName:
+    Type: String
+  EKSNodeGroupStackName:
+    Type: String
+Resources:
+  EFSFileSystem:
+    Type: AWS::EFS::FileSystem
+    Properties:
+      FileSystemTags:
+        - Key: Name
+          Value: !Ref 'AWS::StackName'
+  EFSMountTarget:
+    Type: 'AWS::EFS::MountTarget'
+    Properties:
+      FileSystemId: !Ref EFSFileSystem
+      SubnetId:
+        Fn::Select:
+          - 0
+          - Fn::Split:
+            - ","
+            - Fn::ImportValue: !Sub '${EKSClusterStackName}::SubnetsPublic'
+      SecurityGroups:
+        - Fn::ImportValue:
+            !Sub '${EKSClusterStackName}::SecurityGroup'
+        - Fn::ImportValue:
+            !Sub '${EKSClusterStackName}::SharedNodeSecurityGroup'
+        - Fn::ImportValue:
+            !Sub '${EKSNodeGroupStackName}::NodeGroupSecurityGroup'
+  EFSMountTarget:
+    Type: 'AWS::EFS::MountTarget'
+    Properties:
+      FileSystemId: !Ref EFSFileSystem
+      SubnetId:
+        Fn::Select:
+          - 1
+          - Fn::Split:
+            - ","
+            - Fn::ImportValue: !Sub '${EKSClusterStackName}::SubnetsPublic'
+      SecurityGroups:
+        - Fn::ImportValue:
+            !Sub '${EKSClusterStackName}::SecurityGroup'
+        - Fn::ImportValue:
+            !Sub '${EKSClusterStackName}::SharedNodeSecurityGroup'
+        - Fn::ImportValue:
+            !Sub '${EKSNodeGroupStackName}::NodeGroupSecurityGroup'
+  EFSMountTarget:
+    Type: 'AWS::EFS::MountTarget'
+    Properties:
+      FileSystemId: !Ref EFSFileSystem
+      SubnetId:
+        Fn::Select:
+          - 2
+          - Fn::Split:
+            - ","
+            - Fn::ImportValue: !Sub '${EKSClusterStackName}::SubnetsPublic'
+      SecurityGroups:
+        - Fn::ImportValue:
+            !Sub '${EKSClusterStackName}::SecurityGroup'
+        - Fn::ImportValue:
+            !Sub '${EKSClusterStackName}::SharedNodeSecurityGroup'
+        - Fn::ImportValue:
+            !Sub '${EKSNodeGroupStackName}::NodeGroupSecurityGroup'
+  # EFSSecurityGroup:
+  #   Type: 'AWS::EC2::SecurityGroup'
+  #   Properties:
+  #     GroupDescription: Allowing access to EFS
+  #     VpcId: 
+  #       Fn::ImportValue: 
+  #         !Sub '${EKSClusterStackName}::VPC'
+  #     SecurityGroupIngress:
+  #       - IpProtocol: tcp
+  #         FromPort: 2049
+  #         ToPort: 2049
+  #         SourceSecurityGroupId:
+  #           Fn::ImportValue:
+  #             !Sub '${EKSNodeGroupStackName}::NodeGroupSecurityGroup'
+
+Outputs:
+  EFSFileSystemId:
+    Export:
+      Name: !Sub '${AWS::StackName}::EFSFileSystemId'
+    Value: !Ref EFSFileSystem
+  StackName:
+    Value: !Ref AWS::StackName

@@ -1,0 +1,19 @@
+---
+
+- name: create directories for kafka
+  file: path="{{ item }}" state=directory
+  with_items:
+    - "{{ helm_host_dir }}/bin"
+
+- name: copy helm install script
+  template: src="get_helm.sh" dest="{{ helm_host_dir }}/bin/get_helm.sh" mode=0755
+  notify: install helm
+
+- meta: flush_handlers
+
+- name: install helm
+  command: "{{ helm_host_dir }}/bin/get_helm.sh"
+  when: install_helm|default(false)|bool == true
+  register: helm_install_res
+  failed_when: helm_install_res.rc != 0
+

@@ -1,0 +1,10 @@
+---
+airflow_namespace: airflow
+eks_cluster_name: airflow-k8s-dev
+node_instance_role_name: AWSEKSNodeInstanceRole
+efs_id: fs-8dae137c
+airflow_image_name: nilan3/airflow-k8s
+airflow_image_version: test-local
+airflow_git_sync_repo: https://github.com/nilan3/aws-kubernetes-airflow.git
+airflow_git_sync_sub_path: dags
+airflow_web_port: 8080

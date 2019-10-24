@@ -1,0 +1,81 @@
+AWSTemplateFormatVersion: 2010-09-09
+Description: >-
+  K8s Master Stack
+Parameters:
+  ApplicationName:
+    Type: String
+    Default: airflow
+  Version:
+    Type: String
+    Default: "0.0.1"
+    Description: Version of the application
+  Environment:
+    Type: String
+    Default: dev
+    Description: Select the appropriate environment
+    AllowedValues:
+      - dev
+      - staging
+      - prod
+  S3CfnBucketName:
+    Type: String
+    Description: S3Bucket Path where the templates are stored
+    Default: aws-cloudformation-templates
+  EksClusterName:
+    Type: String
+    Default: airflow-k8s
+  Ec2KeyName:
+    Type: String
+  NodeImageId:
+    Type: String
+
+Resources:
+  EKSClusterStack:
+    Type: "AWS::CloudFormation::Stack"
+    Properties:
+      TemplateURL: !Sub "https://s3.amazonaws.com/${S3CfnBucketName}-${Environment}-${AWS::Region}/templates/${ApplicationName}/eks-cluster-stack.yml"
+      Parameters:
+        EksClusterName: !Sub '${EksClusterName}-${Environment}'
+      Tags:
+        - Key: Name
+          Value: EKSClusterStack
+        - Key: Version
+          Value: !Ref Version
+        - Key: Application
+          Value: !Ref ApplicationName
+        - Key: Environment
+          Value: !Ref Environment
+  EKSNodeGroupStack:
+    Type: "AWS::CloudFormation::Stack"
+    DependsOn: EKSClusterStack
+    Properties:
+      TemplateURL: !Sub "https://s3.amazonaws.com/${S3CfnBucketName}-${Environment}-${AWS::Region}/templates/${ApplicationName}/eks-nodegroup-stack.yml"
+      Parameters:
+        KeyName: !Ref Ec2KeyName
+        NodeImageId: !Ref NodeImageId
+        NodeInstanceType: m5.xlarge
+        NodeAutoScalingGroupMaxSize: 3
+        ClusterName: !Sub '${EksClusterName}-${Environment}'
+        NodeGroupName: ng1
+        ClusterControlPlaneSecurityGroup: !GetAtt EKSClusterStack.Outputs.SecurityGroup
+        VpcId: !GetAtt EKSClusterStack.Outputs.VPC
+        Subnets: !GetAtt EKSClusterStack.Outputs.SubnetsPublic
+      Tags:
+        - Key: Name
+          Value: EKSNodeGroupStack
+        - Key: Version
+          Value: !Ref Version
+        - Key: Application
+          Value: !Ref ApplicationName
+        - Key: Environment
+          Value: !Ref Environment
+  # EFSFileSystemStack: #TODO
+  #   Type: "AWS::CloudFormation::Stack"
+  #   DependsOn:
+  #     - EKSClusterStack
+  #     - EKSNodeGroupStack
+  #   Properties:
+  #     TemplateURL: !Sub "https://s3.amazonaws.com/${S3CfnBucketName}-${Environment}-${AWS::Region}/templates/${ApplicationName}/efs-fs-stack.yml"
+  #     Parameters:
+  #       EKSClusterStackName: !GetAtt EKSClusterStack.Outputs.StackName
+  #       EKSNodeGroupStackName: !GetAtt EKSNodeGroupStack.Outputs.StackName

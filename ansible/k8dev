@@ -1,0 +1,8 @@
+[k8dev]
+k8dev01 ansible_host=3.8.96.67
+
+[bastion-servers]
+k8dev01
+
+[airflow:children]
+bastion-servers

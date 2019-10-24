@@ -1,0 +1,3 @@
+---
+- name: update kube auth
+  set_fact: kube_auth_update=true

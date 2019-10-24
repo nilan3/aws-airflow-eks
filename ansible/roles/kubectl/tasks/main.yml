@@ -1,0 +1,47 @@
+---
+
+- name: Set fact for kubectl
+  set_fact:
+    kubectl_installation_folder: /usr/local/bin
+
+- name: create directories for kubectl
+  file: path="{{ item }}" state=directory
+  with_items:
+    - "{{ kubectl_host_dir }}/conf"
+
+- name: copy kubectl auth configuration
+  template: src="aws-auth-cm.yml.j2" dest="{{ kubectl_host_dir }}/conf/aws-auth-cm.yml"
+  notify: update kube auth
+
+- name: Check if kubectl exists
+  stat:
+    path: /usr/local/bin/kubectl
+  register: kubectl_exists
+
+- name: get latest kubectl stable version
+  command: curl -s https://storage.googleapis.com/kubernetes-release/release/stable.txt
+  when: kubectl_exists.stat.exists == False
+  register: kube_stable_version
+
+- name: Download kubectl binary
+  get_url:
+    url: "https://storage.googleapis.com/kubernetes-release/release/{{ kube_stable_version.stdout }}/bin/linux/amd64/kubectl"
+    dest: "{{ kubectl_installation_folder }}/kubectl"
+    mode: 0755
+  when: kubectl_exists.stat.exists == False
+  register: result
+  failed_when: result.status_code != 200
+
+- name: update eks kube config
+  command: "aws --region {{ aws_region }} eks update-kubeconfig --name {{ eks_cluster_name }}"
+  when: kubectl_exists.stat.exists == False
+  register: update_kubeconfig
+  failed_when: "'/root/.kube/config' not in update_kubeconfig.stdout"
+
+- meta: flush_handlers
+
+- name: update kube auth configmap #TODO: use kubernetes_module
+  command: "/usr/local/bin/kubectl apply -f {{ kubectl_host_dir }}/conf/aws-auth-cm.yml"
+  when: kube_auth_update|default(false)|bool == true
+  register: update_kube_auth_configmap
+  failed_when: update_kube_auth_configmap.rc != 0

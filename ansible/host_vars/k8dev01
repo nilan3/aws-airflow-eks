@@ -1,0 +1,6 @@
+---
+hostname: k8dev01
+int_server_id: 1
+
+net_public_ip: 3.8.96.67
+net_private_ip: 172.31.13.248

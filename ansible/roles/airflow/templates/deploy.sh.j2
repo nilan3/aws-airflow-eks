@@ -1,0 +1,15 @@
+#!/usr/bin/env bash
+
+set -e
+
+/usr/local/bin/kubectl delete -f "{{ airflow_host_dir }}/conf/postgres.yml" || true
+/usr/local/bin/kubectl delete -f "{{ airflow_host_dir }}/conf/airflow.yml" || true
+/usr/local/bin/kubectl delete -f "{{ airflow_host_dir }}/conf/secrets.yml" || true
+
+/usr/local/bin/kubectl apply -f "{{ airflow_host_dir }}/conf/secrets.yml"
+/usr/local/bin/kubectl apply -f "{{ airflow_host_dir }}/conf/configmaps.yml"
+/usr/local/bin/kubectl apply -f "{{ airflow_host_dir }}/conf/postgres.yml"
+/usr/local/bin/kubectl apply -f "{{ airflow_host_dir }}/conf/volumes.yml"
+/usr/local/bin/kubectl apply -f "{{ airflow_host_dir }}/conf/airflow.yml"
+
+exit 0
