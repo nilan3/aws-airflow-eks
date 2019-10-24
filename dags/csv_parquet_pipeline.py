@@ -13,13 +13,13 @@ import datetime
 import logging
 
 try:
-    from airflow.dags.custom_operators.emr_step_python_operator import EmrClusterException, EmrStepPythonOperator
+    from airflow.dags.custom_operators.emr_step_operator import EmrClusterException, EmrStepOperator
     from airflow.dags.custom_operators.dynamo_sensor_operator import DynamoSensorOperator
 except ModuleNotFoundError:
     custom_operators_path = "/root/airflow/dags/repo/dags"
     if custom_operators_path not in sys.path:
         sys.path.append(custom_operators_path)
-    from custom_operators.emr_step_python_operator import EmrClusterException, EmrStepPythonOperator
+    from custom_operators.emr_step_operator import EmrClusterException, EmrStepOperator
     from custom_operators.dynamo_sensor_operator import DynamoSensorOperator
 
 logging.basicConfig(level=logging.INFO)
@@ -97,7 +97,7 @@ initiate_csv_to_parquet_jobs = PythonOperator(
     executor_config={"KubernetesExecutor": {"image": "nilan3/airflow-k8s:test-local-3"}}
 )
 
-pc_etlclausepattern_task = EmrStepPythonOperator(
+pc_etlclausepattern_task = EmrStepOperator(
     task_id="pc_etlclausepattern_task",
     executor_config={"KubernetesExecutor": {
         "image": "nilan3/airflow-k8s:test-local-3"
@@ -113,7 +113,7 @@ pc_etlclausepattern_task = EmrStepPythonOperator(
     mode="python"
 )
 
-pc_account_task = EmrStepPythonOperator(
+pcx_mottransaction_task = EmrStepOperator(
     task_id="pc_account_task",
     executor_config={"KubernetesExecutor": {
         "image": "nilan3/airflow-k8s:test-local-3"
@@ -124,7 +124,23 @@ pc_account_task = EmrStepPythonOperator(
     configuration_path="s3://dlg-artefacts-bucket-sandbox-eu-west-1/emr/configurations/emr-csv-to-parquet.yml",
     env_variables={
         "PY_FILES": "s3://dlg-artefacts-bucket-sandbox-eu-west-1/emr/py-files/dlg-etl-quotes.zip",
-        "SRC_S3_PREFIX": "PCUSER/PC_ACCOUNT"
+        "SRC_S3_PREFIX": "PCUSER/PCX_MOTTRANSACTION_DLG"
+    },
+    mode="python"
+)
+
+pcx_motcost_task = EmrStepOperator(
+    task_id="pc_account_task",
+    executor_config={"KubernetesExecutor": {
+        "image": "nilan3/airflow-k8s:test-local-3"
+    }},
+    cluster_name="DataPipeline-EMR-sandbox",
+    driver_path="s3://dlg-artefacts-bucket-sandbox-eu-west-1/emr/drivers/csv_to_parquet.py",
+    step_name="csv2parquet_pc_account",
+    configuration_path="s3://dlg-artefacts-bucket-sandbox-eu-west-1/emr/configurations/emr-csv-to-parquet.yml",
+    env_variables={
+        "PY_FILES": "s3://dlg-artefacts-bucket-sandbox-eu-west-1/emr/py-files/dlg-etl-quotes.zip",
+        "SRC_S3_PREFIX": "PCUSER/PCX_MOTCOST_DLG"
     },
     mode="python"
 )
@@ -143,7 +159,7 @@ pc_etlclausepattern_sensor_task = DynamoSensorOperator(
     processor=dynamodb_sensor_processor
 )
 
-pc_account_sensor_task = DynamoSensorOperator(
+pcx_mottransaction_sensor_task = DynamoSensorOperator(
     task_id="pc_account_sensor_task",
     executor_config={"KubernetesExecutor": {
         "image": "nilan3/airflow-k8s:test-local-3"
@@ -151,7 +167,21 @@ pc_account_sensor_task = DynamoSensorOperator(
     table_name="policycentre_pipeline_control",
     key_condition_expr="#S = :schema_table_name AND #T > :time_stamp",
     expr_attr_names={"#S": "schema_table", "#T": "ts"},
-    expr_attr_values={":schema_table_name": {"S": "PCUSER_PC_ACCOUNT"},
+    expr_attr_values={":schema_table_name": {"S": "PCUSER_PCX_MOTTRANSACTION_DLG"},
+                      ":time_stamp": {"N": str(int(datetime.datetime.now().timestamp()) - (24*60*60))}},
+    limit=1,
+    processor=dynamodb_sensor_processor
+)
+
+pcx_motcost_sensor_task = DynamoSensorOperator(
+    task_id="pc_account_sensor_task",
+    executor_config={"KubernetesExecutor": {
+        "image": "nilan3/airflow-k8s:test-local-3"
+    }},
+    table_name="policycentre_pipeline_control",
+    key_condition_expr="#S = :schema_table_name AND #T > :time_stamp",
+    expr_attr_names={"#S": "schema_table", "#T": "ts"},
+    expr_attr_values={":schema_table_name": {"S": "PCUSER_PCX_MOTCOST_DLG"},
                       ":time_stamp": {"N": str(int(datetime.datetime.now().timestamp()) - (24*60*60))}},
     limit=1,
     processor=dynamodb_sensor_processor
@@ -162,12 +192,25 @@ initiate_spark_job = PythonOperator(
     executor_config={"KubernetesExecutor": {"image": "nilan3/airflow-k8s:test-local-3"}}
 )
 
-curation_spark_job = PythonOperator(
-    task_id="join_curate_task", python_callable=initiate_spark, dag=dag,
-    executor_config={"KubernetesExecutor": {"image": "nilan3/airflow-k8s:test-local-3"}}
-)
+# curation_spark_job = EmrStepOperator(
+#     task_id="join_curate_task", dag=dag,
+#     executor_config={"KubernetesExecutor": {
+#         "image": "nilan3/airflow-k8s:test-local-3"
+#     }},
+#     cluster_name="DataPipeline-EMR-sandbox",
+#     driver_path="s3://dlg-artefacts-bucket-sandbox-eu-west-1/emr/drivers/csv_to_parquet.py",
+#     step_name="pc_policy_transaction",
+#     configuration_path="s3://dlg-artefacts-bucket-sandbox-eu-west-1/emr/configurations/emr-csv-to-parquet.yml",
+#     env_variables={
+#         "PY_FILES": "s3://dlg-artefacts-bucket-sandbox-eu-west-1/emr/py-files/dlg-etl-quotes.zip",
+#         "SRC_S3_PREFIX": "PCUSER/PC_ACCOUNT"
+#     },
+#     mode="python"
+#
+# )
 
-initiate_csv_to_parquet_jobs >> [pc_etlclausepattern_task, pc_account_task]
+initiate_csv_to_parquet_jobs >> [pc_etlclausepattern_task, pcx_mottransaction_task, pcx_motcost_task]
 pc_etlclausepattern_task >> pc_etlclausepattern_sensor_task
-pc_account_task >> pc_account_sensor_task
-[pc_etlclausepattern_sensor_task, pc_account_sensor_task] >> initiate_spark_job >> curation_spark_job
+pcx_mottransaction_task >> pcx_mottransaction_sensor_task
+pcx_motcost_task >> pcx_motcost_sensor_task
+[pc_etlclausepattern_sensor_task, pcx_mottransaction_sensor_task, pcx_motcost_sensor_task] >> initiate_spark_job
