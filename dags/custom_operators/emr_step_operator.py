@@ -80,16 +80,16 @@ class EmrStepOperator(BaseOperator):
         action = emr_conn.add_job_flow_steps(JobFlowId=cluster_id, Steps=[step])
         LOGGER.info("Added step: %s", action)
 
-    def submit_spark_job(self, emr_conn, step_action_name, job_name, environmental_vars, spark_config):
-        step_args = f"{environmental_vars} /usr/bin/spark-submit --master yarn --name {} --deploy-mode cluster " \
-                    f"--py-files s3://{}/emr/py-files/dlg-etl-quotes.zip " \
-                    f"--driver-memory 3072m --conf spark.executor.memory=1024m --conf " \
-                    f"spark.executor.cores=1 " \
-                    f"--conf spark.yarn.maxAppAttempts=1 --conf spark.executor.instances=30 " \
-                    f"--conf spark.dynamicAllocation.enabled=false " \
-                    f"--conf spark.hadoop.fs.s3a.fast.upload=true " \
-                    f"{self.driver_path} {self.configuration_path}"
-        LOGGER.info("Added step")
+    # def submit_spark_job(self, emr_conn, step_action_name, job_name, environmental_vars, spark_config):
+    #     step_args = f"{environmental_vars} /usr/bin/spark-submit --master yarn --name {} --deploy-mode cluster " \
+    #                 f"--py-files s3://{}/emr/py-files/dlg-etl-quotes.zip " \
+    #                 f"--driver-memory 3072m --conf spark.executor.memory=1024m --conf " \
+    #                 f"spark.executor.cores=1 " \
+    #                 f"--conf spark.yarn.maxAppAttempts=1 --conf spark.executor.instances=30 " \
+    #                 f"--conf spark.dynamicAllocation.enabled=false " \
+    #                 f"--conf spark.hadoop.fs.s3a.fast.upload=true " \
+    #                 f"{self.driver_path} {self.configuration_path}"
+    #     LOGGER.info("Added step")
 
     def execute(self, context):
         """
