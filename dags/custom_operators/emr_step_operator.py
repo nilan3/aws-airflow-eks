@@ -21,7 +21,7 @@ class EmrClusterException(Exception):
 
 
 class EmrStepOperator(BaseOperator):
-    template_fields = ('cluster_name', 'driver_path', 'step_name', 'configuration_path', 'env_variables', 'mode', 'resource_constraints')
+    template_fields = ('cluster_name', 'driver_path', 'step_name', 'configuration_path', 'env_variables', 'mode', 'spark_config')
     # ui_color = '#A6E6A6'
 
     @apply_defaults
@@ -80,6 +80,17 @@ class EmrStepOperator(BaseOperator):
         action = emr_conn.add_job_flow_steps(JobFlowId=cluster_id, Steps=[step])
         LOGGER.info("Added step: %s", action)
 
+    # def submit_spark_job(self, emr_conn, step_action_name, job_name, environmental_vars, spark_config):
+    #     step_args = f"{environmental_vars} /usr/bin/spark-submit --master yarn --name {} --deploy-mode cluster " \
+    #                 f"--py-files s3://{}/emr/py-files/dlg-etl-quotes.zip " \
+    #                 f"--driver-memory 3072m --conf spark.executor.memory=1024m --conf " \
+    #                 f"spark.executor.cores=1 " \
+    #                 f"--conf spark.yarn.maxAppAttempts=1 --conf spark.executor.instances=30 " \
+    #                 f"--conf spark.dynamicAllocation.enabled=false " \
+    #                 f"--conf spark.hadoop.fs.s3a.fast.upload=true " \
+    #                 f"{self.driver_path} {self.configuration_path}"
+    #     LOGGER.info("Added step")
+
     def execute(self, context):
         """
         Method to be run when operator is executed.
@@ -95,5 +106,5 @@ class EmrStepOperator(BaseOperator):
         if self.mode == "python":
             self.submit_python_job(emr_conn, step_action_name, env)
         elif self.mode == "pyspark":
-        #     self.submit_spark_job()
+            # self.submit_spark_job()
             self.submit_python_job(emr_conn, step_action_name, env)
