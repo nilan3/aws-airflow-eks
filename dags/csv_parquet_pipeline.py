@@ -94,14 +94,14 @@ def dynamodb_sensor_processor(items, boto3_client):
 
 initiate_csv_to_parquet_jobs = PythonOperator(
     task_id="initiate_csv_to_parquet_jobs", python_callable=initiate_csv_to_parquet, dag=dag,
-    executor_config={"KubernetesExecutor": {"image": "nilan3/airflow-k8s:test-local-2"}}
+    # executor_config={"KubernetesExecutor": {"image": "nilan3/airflow-k8s:test-local-3"}}
 )
 
 pc_etlclausepattern_task = EmrStepPythonOperator(
     task_id="pc_etlclausepattern_task",
-    executor_config={"KubernetesExecutor": {
-        "image": "nilan3/airflow-k8s:test-local-2"
-    }},
+    # executor_config={"KubernetesExecutor": {
+    #     "image": "nilan3/airflow-k8s:test-local-3"
+    # }},
     cluster_name="DataPipeline-EMR-sandbox",
     driver_path="s3://dlg-artefacts-bucket-sandbox-eu-west-1/emr/drivers/csv_to_parquet.py",
     configuration_path="s3://dlg-artefacts-bucket-sandbox-eu-west-1/emr/configurations/emr-csv-to-parquet.yml",
@@ -113,9 +113,9 @@ pc_etlclausepattern_task = EmrStepPythonOperator(
 
 pc_account_task = EmrStepPythonOperator(
     task_id="pc_account_task",
-    executor_config={"KubernetesExecutor": {
-        "image": "nilan3/airflow-k8s:test-local-2"
-    }},
+    # executor_config={"KubernetesExecutor": {
+    #     "image": "nilan3/airflow-k8s:test-local-3"
+    # }},
     cluster_name="DataPipeline-EMR-sandbox",
     driver_path="s3://dlg-artefacts-bucket-sandbox-eu-west-1/emr/drivers/csv_to_parquet.py",
     configuration_path="s3://dlg-artefacts-bucket-sandbox-eu-west-1/emr/configurations/emr-csv-to-parquet.yml",
@@ -127,9 +127,9 @@ pc_account_task = EmrStepPythonOperator(
 
 pc_etlclausepattern_sensor_task = DynamoSensorOperator(
     task_id="pc_etlclausepattern_sensor_task",
-    executor_config={"KubernetesExecutor": {
-        "image": "nilan3/airflow-k8s:test-local-2"
-    }},
+    # executor_config={"KubernetesExecutor": {
+    #     "image": "nilan3/airflow-k8s:test-local-3"
+    # }},
     table_name="policycentre_pipeline_control",
     key_condition_expr="#S = :schema_table_name AND #T > :time_stamp",
     expr_attr_names={"#S": "schema_table", "#T": "ts"},
@@ -141,9 +141,9 @@ pc_etlclausepattern_sensor_task = DynamoSensorOperator(
 
 pc_account_sensor_task = DynamoSensorOperator(
     task_id="pc_account_sensor_task",
-    executor_config={"KubernetesExecutor": {
-        "image": "nilan3/airflow-k8s:test-local-2"
-    }},
+    # executor_config={"KubernetesExecutor": {
+    #     "image": "nilan3/airflow-k8s:test-local-3"
+    # }},
     table_name="policycentre_pipeline_control",
     key_condition_expr="#S = :schema_table_name AND #T > :time_stamp",
     expr_attr_names={"#S": "schema_table", "#T": "ts"},
@@ -155,12 +155,12 @@ pc_account_sensor_task = DynamoSensorOperator(
 
 initiate_spark_job = PythonOperator(
     task_id="initiate_spark_job", python_callable=initiate_spark, dag=dag,
-    executor_config={"KubernetesExecutor": {"image": "nilan3/airflow-k8s:test-local-2"}}
+    # executor_config={"KubernetesExecutor": {"image": "nilan3/airflow-k8s:test-local-3"}}
 )
 
 curation_spark_job = PythonOperator(
     task_id="join_curate_task", python_callable=initiate_spark, dag=dag,
-    executor_config={"KubernetesExecutor": {"image": "nilan3/airflow-k8s:test-local-2"}}
+    # executor_config={"KubernetesExecutor": {"image": "nilan3/airflow-k8s:test-local-3"}}
 )
 
 initiate_csv_to_parquet_jobs >> [pc_etlclausepattern_task, pc_account_task]
