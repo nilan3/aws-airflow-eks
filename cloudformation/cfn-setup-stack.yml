@@ -74,6 +74,7 @@ Resources:
                 Effect: "Allow"
                 Action: "*"
                 Resource: "*"
+                #TODO: Scope Down
 
   EC2Instance:
     Type: AWS::EC2::Instance
